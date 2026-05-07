@@ -19,3 +19,20 @@ build/
 outputs/
 runs/
 wandb/
+
+# audio + generated artifacts
+*.wav
+
+# generated demo outputs (note: folder name is "output", not "outputs")
+demo/output/
+output/
+
+# large checkpoints / datasets (keep out of git; use LFS or download scripts)
+all_checkpoints/
+ai_kids_processed/
+demo/input/audio/
+demo/input/multispeaker/
+# keep list files, ignore audio itself
+!demo/reference_audio/
+demo/reference_audio/*.wav
+!demo/reference_audio/reference_audio.lst
