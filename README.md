@@ -77,21 +77,8 @@ Successful runs write anonymized wavs under `output_dir` and a list at `output_d
 
 This uses the demo mixture + enrollment wavs under `demo/input/multispeaker/` and outputs into `demo/output/`.
 
-```bash
-cd /path/to/SSL-CVA
-python3 inference_multispeaker.py \
-  --mixture_wav demo/input/multispeaker/mixture.wav \
-  --enroll_wav demo/input/multispeaker/reference.wav \
-  --target_age child \
-  --reference_dir demo/reference_audio \
-  --out_dir demo/output/myst999466_on_tsa000000_child_ftft \
-  --duration 5 \
-  --min_duration 1.0
-```
 
-### Multi-speaker v2 (time-splice into full mixture)
-
-`inference_tse_v2.py` runs the same TSE → anonymize steps, but writes a **full-length** `mixture_anonymized.wav` and only modifies a time window of the mixture.
+`inference_tse_v2.py` runs the TSE → anonymize steps, writes a **full-length** `mixture_anonymized.wav`. 
 
 - **`--target_age child`**: uses FT/FT (`inference.py --ft`)
 - **`--target_age adult`**: uses Base/Base (`inference.py --base`)
@@ -127,38 +114,7 @@ Check:
 - `output/.../filtered_list.txt` is created and the wavs exist.
 
 ## Installation / dependencies
+ to be added. 
 
-Python **3.9+** is typical for this stack.
 
-Core packages you will need:
 
-- **PyTorch** (+ CUDA if you want GPU)
-- **fairseq** (HuBERT loading)
-- **speechbrain** (ECAPA speaker embedding used in TSE + some model utilities)
-- **soundfile**, **librosa**
-- **numpy**
-- Optional: **resampy** (cleaner resampling), **tqdm**
-
-One workable install pattern (CPU example; adjust to your CUDA / PyTorch install):
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install --upgrade pip
-pip install torch torchaudio
-pip install fairseq speechbrain soundfile librosa numpy resampy tqdm
-```
-
-**PyTorch 2.6+** changed `torch.load` defaults; this repo imports `adapted_from_facebookresearch/torch_load_compat.py` from `models.py` so fairseq Hubert checkpoints load without changing site-packages.
-
-## Troubleshooting
-
-| Symptom | Likely cause |
-|--------|----------------|
-| `No reference audio >= …s` | Empty or too-short pool; lower `--min_duration` or fix `--reference_dir` / `reference.lst`. |
-| `No valid inputs after filtering` | Input paths missing on disk or wrong remap; use paths under `latest-child-speech-dataset` or absolute paths. |
-| `Weights only load failed` / unpickling Hubert | Ensure you are on current `models.py` + `torch_load_compat.py`; use a PyTorch/fairseq combo that matches your checkpoints. |
-
----
-
-When open-sourcing, next cleanups might include: configurable dataset root instead of hard-coded `/app`, pinning dependencies, and moving large weights to Hugging Face with download scripts.
