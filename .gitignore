@@ -1,27 +1,12 @@
 __pycache__/
 *.py[cod]
-.Python
-.env
-.venv/
-venv/
-dist/
-build/
-*.egg-info/
 
-# ML artifacts (usually keep out of git; use Hugging Face instead)
-*.pt
-*.pth
-*.ckpt
-*.bin
-*.safetensors
-
-
-# large checkpoints / datasets (keep out of git; use LFS or download scripts)
+# large checkpoints / datasets
 all_checkpoints/
 
-# local conda bootstrap (never commit)
+# local conda bootstrap
 miniconda/
 Miniconda3-*.sh
-Miniconda*.sh
+env.sh
 
-demo/outpout/
+demo/output/

@@ -44,6 +44,8 @@ export OUT_DIR
 
 python3 - <<'PY'
 import os
+import shutil
+from pathlib import Path
 from huggingface_hub import snapshot_download
 
 repo_id = os.environ["REPO_ID"]
@@ -57,6 +59,32 @@ snapshot_download(
     resume_download=True,
 )
 
-print(f"Downloaded checkpoints to: {out_dir}")
+out_p = Path(out_dir)
+
+# Some checkpoint repos already contain a top-level folder called "all_checkpoints".
+# If we download into OUT_DIR=all_checkpoints, we end up with:
+#   all_checkpoints/all_checkpoints/<models...>
+# Flatten to:
+#   all_checkpoints/<models...>
+inner = out_p / "all_checkpoints"
+if inner.is_dir() and any(inner.glob("*/config.json")):
+    for item in inner.iterdir():
+        dst = out_p / item.name
+        if not dst.exists():
+            shutil.move(str(item), str(dst))
+            continue
+        # Merge directories conservatively (don't overwrite).
+        if item.is_dir() and dst.is_dir():
+            for child in item.rglob("*"):
+                rel = child.relative_to(item)
+                out_child = dst / rel
+                if out_child.exists():
+                    continue
+                out_child.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(child), str(out_child))
+            shutil.rmtree(item, ignore_errors=True)
+    shutil.rmtree(inner, ignore_errors=True)
+
+print(f"Downloaded checkpoints to: {out_p.resolve()}")
 PY
 

@@ -5,8 +5,12 @@ set -eo pipefail
 # Usage:
 #   source env.sh
 
+# Resolve CONDA_DIR at source-time (so env.sh remains portable).
+_ssl_cva_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CONDA_DIR="${CONDA_DIR:-$_ssl_cva_root/miniconda}"
+
 # shellcheck disable=SC1090
-source "/app/SSL-CVA/miniconda/etc/profile.d/conda.sh"
+source "$CONDA_DIR/etc/profile.d/conda.sh"
 
 # Avoid nounset issues in conda activation scripts.
 _nounset_was_on=0
