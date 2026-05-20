@@ -80,21 +80,13 @@ Successful runs write anonymized wavs under `output_dir` and a list at `output_d
 
 `inference_tse_v2.py` runs the TSE → anonymize steps, writes a **full-length** `mixture_anonymized.wav`, and only modifies a time window of the mixture.
 
-<<<<<<< HEAD
-
-`inference_tse_v2.py` runs the TSE → anonymize steps, writes a **full-length** `mixture_anonymized.wav`. 
-
-- **`--target_age child`**: uses FT/FT (`inference.py --ft`)
-- **`--target_age adult`**: uses Base/Base (`inference.py --base`)
-=======
 - `--target_age child`: uses FT/FT (`inference.py --ft`)
 - `--target_age adult`: uses Base/Base (`inference.py --base`)
->>>>>>> 09a7960 (installation added)
 
 Recombination modes:
 
 - `--recombine replace` (default): overwrite the window with anonymized target only
-- `--recombine residual_add`: window-only version of the v1 algebra \( \text{anon} + (\text{mix} - \text{target}) \)
+- `--recombine residual_add`: window-only version of the v1 algebra  \text{anon} + (\text{mix} - \text{target}) 
 
 Example (process 0–5s, keep the rest untouched):
 
@@ -118,16 +110,8 @@ This repository contains code adapted from upstream projects. Please see the lic
 - `adapted_from_facebookresearch/`
 - `adapted_from_speechbrain/`
 
-<<<<<<< HEAD
-## Installation / dependencies
- to be added. 
-
-
-
-=======
 ## Acknowledgments
 
 This work builds on prior open-source releases from the SSL-SAS ecosystem, including components originally adapted from Facebook Research and SpeechBrain.
 
 That's all and good luck!
->>>>>>> 09a7960 (installation added)
