@@ -1,62 +1,65 @@
-# SSL-CVA (Child-centric Voice Anonymization)
+# Child-Centric Voice Anonymization in Single and Multi-Speaker Speech via Domain-Adapted SSL Models
 
-This repo contains the code used for **selective (reference/pool-based) anonymization** experiments from the paper, including **Base/Base (SSL-B)** and **FT/FT (SSL-FT)** variants.
+This repository contains code for **selective (reference/pool-based) voice anonymization** in:
 
-## What you need on disk
+- **Single-speaker speech**: Base/Base (SSL-B) and FT/FT (SSL-FT)
+- **Multi-speaker mixtures**: TSE → anonymize target → recombine
 
-1. **This repository** — your working copy of `SSL-CVA/`.
-2. **Checkpoints** — under `all_checkpoints/`:
-   - `all_checkpoints/HiFi-GAN_B_Soft_B` (Base/Base)
-   - `all_checkpoints/HIFI-GAN_FT_Soft_FT` (FT/FT)
-3. **Inputs** — for a transparent demo, this repo includes:
-   - **Single-speaker**: `demo/input/audio/` + `demo/input/lists/demo_inputs_mps_5x5s.lst`
-   - **Multi-speaker**: `demo/input/multispeaker/mixture.wav` + `demo/input/multispeaker/reference.wav`
+This codebase is adapted from and inspired by the SSL-SAS family of systems.
 
-Optional but convenient:
+## Papers
 
-4. **Reference audio pool** (paper reference speakers):
-   - Reference directory: `demo/reference_audio/`
-   - List (for transparency): `demo/reference_audio/reference_audio.lst` (44 utterances)
+This repository follows the core ideas and components introduced in:
 
-## Path rules (important)
+1. [Language-independent speaker anonymization approach using self-supervised pre-trained models](https://arxiv.org/abs/2202.13097)
+2. [Analyzing Language-Independent Speaker Anonymization Framework under Unseen Conditions](https://arxiv.org/abs/2203.14834)
 
-- **`--input_test_file`**: each line is an audio path. Relative paths are resolved relative to the list file’s directory. Lines starting with `#` are ignored.
-- **`--reference_dir`**: must be a directory that contains reference `.wav`/`.flac` files (recursively). For paper-style reference speakers, use `demo/reference_audio/` (documented by `demo/reference_audio/reference_audio.lst`).
+Please cite these papers if you use this code.
 
-## 1. Copy
+## Dependencies
 
-After `git clone` (or unpacking a tarball):
+```bash
+git clone https://github.com/pranavtushar/SSL-CVA.git
+cd SSL-CVA
+bash scripts/install.sh
+source env.sh
+```
 
-- Copy **checkpoints** into `all_checkpoints/` if they are not already present.
+## Checkpoints (download from Hugging Face)
 
-## 2. (Optional) Regenerate the demo input list (5 utterances ≥ 5s)
-
-If you have the sibling dataset repo at `../latest-child-speech-dataset/`, you can (re)generate the demo set:
+Model weights are **not committed** to this repository. Download them from a Hugging Face model repo into `all_checkpoints/`:
 
 ```bash
 cd /path/to/SSL-CVA
-python3 make_demo_mps_list.py --n 5 --min_seconds 5.0
+bash scripts/download_checkpoints.sh --repo pranavtushar/ssl-cva-checkpoints
 ```
 
-This writes/refreshes the *source* demo artifacts (`demo_inputs/`, `demo_inputs_mps_5x5s.lst`). The repo also includes a cleaned, self-contained demo folder under `demo/` used in the commands below.
+If your Hugging Face repo is private, export `HF_TOKEN` in your shell before downloading:
 
-## 3. Run inference (BB or FT/FT)
+```bash
+export HF_TOKEN=...
+```
 
-Both runs below use:
+Optional: keep checkpoints outside the repo folder:
 
-- **Input list**: `demo_inputs_mps_5x5s.lst`
-- **Reference dir**: `demo/reference_audio/` (documented by `demo/reference_audio/reference_audio.lst`)
+```bash
+export SSL_CVA_CHECKPOINTS_DIR=/path/to/all_checkpoints
+```
+
+Both `inference.py` and `inference_tse_v2.py` also accept `--checkpoints_dir /path/to/all_checkpoints`.
+
+## Single-speaker anonymization (FT/FT and Base/Base)
 
 ### FT/FT (paper default, SSL-FT)
 
 ```bash
 cd /path/to/SSL-CVA
 python3 inference.py --ft \
-  --input_test_file demo/input/lists/demo_inputs_mps_5x5s.lst \
-  --output_dir output/demo_selective_ft \
-  --reference_dir demo/reference_audio \
+  --input_test_file demo/input/lists/inputs_mps.lst \
+  --reference_dir demo/input/reference_audio \
+  --output_dir demo/output/selective_ft \
   --min_duration 1.0 \
-  --debug_stats
+  --quiet
 ```
 
 ### Base/Base (SSL-B)
@@ -64,57 +67,67 @@ python3 inference.py --ft \
 ```bash
 cd /path/to/SSL-CVA
 python3 inference.py --base \
-  --input_test_file demo/input/lists/demo_inputs_mps_5x5s.lst \
-  --output_dir output/demo_selective_bb \
-  --reference_dir demo/reference_audio \
+  --input_test_file demo/input/lists/inputs_mps.lst \
+  --reference_dir demo/input/reference_audio \
+  --output_dir demo/output/selective_base \
   --min_duration 1.0 \
-  --debug_stats
+  --quiet
 ```
 
 Successful runs write anonymized wavs under `output_dir` and a list at `output_dir/filtered_list.txt`.
 
-## 5. Multi-speaker demo (TSE → anonymize target → recombine)
+## Multi-speaker demo (TSE → anonymize target → recombine)
 
-This uses the demo mixture + enrollment wavs under `demo/input/multispeaker/` and outputs into `demo/output/`.
+`inference_tse_v2.py` runs the TSE → anonymize steps, writes a **full-length** `mixture_anonymized.wav`, and only modifies a time window of the mixture.
 
+<<<<<<< HEAD
 
 `inference_tse_v2.py` runs the TSE → anonymize steps, writes a **full-length** `mixture_anonymized.wav`. 
 
 - **`--target_age child`**: uses FT/FT (`inference.py --ft`)
 - **`--target_age adult`**: uses Base/Base (`inference.py --base`)
+=======
+- `--target_age child`: uses FT/FT (`inference.py --ft`)
+- `--target_age adult`: uses Base/Base (`inference.py --base`)
+>>>>>>> 09a7960 (installation added)
 
 Recombination modes:
 
-- **`--recombine replace`** (default): overwrite the window with the anonymized target only  
-  (this removes the non-target speaker in overlapped regions of that window).
-- **`--recombine residual_add`**: window-only version of the v1 algebra  
-  \( \text{anon} + (\text{mix} - \text{target}) \), which better preserves non-target energy during overlap.
+- `--recombine replace` (default): overwrite the window with anonymized target only
+- `--recombine residual_add`: window-only version of the v1 algebra \( \text{anon} + (\text{mix} - \text{target}) \)
 
 Example (process 0–5s, keep the rest untouched):
 
 ```bash
 cd /path/to/SSL-CVA
 python3 inference_tse_v2.py \
-  --mixture_wav demo/input/multispeaker/mixture.wav \
-  --enroll_wav demo/input/multispeaker/reference.wav \
-  --target_age adult \
-  --reference_dir demo/reference_audio \
-  --out_dir demo/output/multispeaker_v2_adult_bb \
-  --t_start_sec 0 \
+  --mixture_wav demo/input/multispeaker/000001_s1-myst_999455_s2-libri_7729_ov40.mix.wav \
+  --enroll_wav demo/input/multispeaker/myst_999455_2009-07-12_00-00-00_MS_2.1_002.wav \
+  --target_age child \
+  --reference_dir demo/input/reference_audio \
+  --out_dir demo/output/multispeaker \
   --duration 5 \
   --recombine residual_add \
-  --min_duration 1.0
+  --quiet
 ```
 
-## 4. If it works, you are done with this step
+## License
 
-Check:
+This repository contains code adapted from upstream projects. Please see the license files in:
 
-- Log shows a positive **reference speaker** count and processes ≥ 1 input.
-- `output/.../filtered_list.txt` is created and the wavs exist.
+- `adapted_from_facebookresearch/`
+- `adapted_from_speechbrain/`
 
+<<<<<<< HEAD
 ## Installation / dependencies
  to be added. 
 
 
 
+=======
+## Acknowledgments
+
+This work builds on prior open-source releases from the SSL-SAS ecosystem, including components originally adapted from Facebook Research and SpeechBrain.
+
+That's all and good luck!
+>>>>>>> 09a7960 (installation added)

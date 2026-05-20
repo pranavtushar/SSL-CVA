@@ -1,0 +1,31 @@
+
+--index-url https://download.pytorch.org/whl/cu128
+--extra-index-url https://pypi.org/simple
+
+# Core
+torch==2.8.0
+torchaudio==2.8.0
+torchvision==0.23.0
+
+# HuBERT loading
+fairseq==0.12.2
+
+# Speaker embeddings / utils
+speechbrain==0.5.16
+HyperPyYAML==1.2.2
+
+# Audio / numerics
+librosa==0.11.0
+soundfile==0.13.1
+AMFM_decompy==1.0.12.2
+numpy==1.26.4
+scipy==1.13.1
+numba==0.60.0
+
+# Misc (used in CVA codepaths)
+pandas==2.3.3
+kaldiio==2.18.1
+joblib==1.5.3
+matplotlib==3.9.4
+
+tensorboardX

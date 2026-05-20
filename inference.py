@@ -18,11 +18,33 @@ from __future__ import annotations
 import argparse
 import glob
 import json
+import logging
 import os
 import random
 import sys
 import time
+import warnings
 from pathlib import Path
+
+
+def _configure_quiet() -> None:
+    # Suppress common third-party log spam and deprecation warnings.
+    logging.getLogger("fairseq").setLevel(logging.ERROR)
+    logging.getLogger("fairseq.tasks.text_to_speech").setLevel(logging.ERROR)
+    logging.getLogger("speechbrain").setLevel(logging.ERROR)
+    logging.getLogger("speechbrain.utils.train_logger").setLevel(logging.ERROR)
+
+    warnings.filterwarnings("ignore", category=FutureWarning)
+    warnings.filterwarnings("ignore", category=UserWarning)
+    # YAAPT can emit benign RuntimeWarnings on some clips.
+    warnings.filterwarnings("ignore", category=RuntimeWarning, module=r"amfm_decompy(\..*)?$")
+
+
+if os.environ.get("SSL_CVA_QUIET", "").strip().lower() in {"1", "true", "yes", "on"}:
+    _configure_quiet()
+elif "--quiet" in sys.argv[1:]:
+    # Must run before fairseq/speechbrain imports happen (they log during import).
+    _configure_quiet()
 
 import librosa
 import numpy as np
@@ -44,7 +66,6 @@ from utils import AttrDict  # noqa: E402
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 REFERENCE_EXTS = (".wav", ".flac")
-
 
 def _scan_checkpoint(cp_dir: str, prefix: str) -> str:
     pattern = os.path.join(cp_dir, prefix + "*")
@@ -190,6 +211,12 @@ def main() -> None:
         default=None,
         help="Optional override checkpoint directory/file (otherwise uses a default for --base/--ft)",
     )
+    p.add_argument(
+        "--checkpoints_dir",
+        default=None,
+        help="Root directory containing model checkpoints (e.g. /path/to/all_checkpoints). "
+        "Overrides SSL_CVA_CHECKPOINTS_DIR.",
+    )
 
     p.add_argument("--input_test_file", required=True, help="Text file listing input audio paths (one per line)")
     p.add_argument("--output_dir", required=True, help="Output root directory")
@@ -201,17 +228,33 @@ def main() -> None:
     p.add_argument("--seed", type=int, default=42, help="RNG seed for reference sampling")
     p.add_argument("--skip_existing", action="store_true", help="Skip items whose output wav already exists")
     p.add_argument("--debug_stats", action="store_true", help="Print per-utterance RTF after each item")
+    p.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Suppress common warnings and third-party logs (fairseq/speechbrain/torch).",
+    )
 
     args = p.parse_args()
+    if args.quiet:
+        _configure_quiet()
 
     script_dir = SCRIPT_DIR
+    ckpt_root_raw = args.checkpoints_dir or os.environ.get("SSL_CVA_CHECKPOINTS_DIR", "")
+    ckpt_root = Path(ckpt_root_raw).expanduser().resolve() if ckpt_root_raw else None
+
     checkpoint_path = Path(args.checkpoint_file) if args.checkpoint_file else None
     if checkpoint_path is None:
-        checkpoint_path = script_dir / (
-            "all_checkpoints/HiFi-GAN_B_Soft_B" if args.base else "all_checkpoints/HIFI-GAN_FT_Soft_FT"
-        )
+        if ckpt_root is not None:
+            checkpoint_path = ckpt_root / ("HiFi-GAN_B_Soft_B" if args.base else "HIFI-GAN_FT_Soft_FT")
+        else:
+            checkpoint_path = script_dir / (
+                "all_checkpoints/HiFi-GAN_B_Soft_B" if args.base else "all_checkpoints/HIFI-GAN_FT_Soft_FT"
+            )
     if not checkpoint_path.is_absolute():
-        checkpoint_path = (script_dir / checkpoint_path).resolve()
+        if ckpt_root is not None:
+            checkpoint_path = (ckpt_root / checkpoint_path).resolve()
+        else:
+            checkpoint_path = (script_dir / checkpoint_path).resolve()
 
     print("[mode]", "base" if args.base else "ft", flush=True)
     print("[checkpoint]", str(checkpoint_path), flush=True)

@@ -2,14 +2,27 @@
 from __future__ import annotations
 
 import argparse
-import json
+import logging
+import os
 import subprocess
 import sys
 import tempfile
+import warnings
 from pathlib import Path
 
 import numpy as np
 import soundfile as sf
+
+
+def _configure_quiet() -> None:
+    # Reduce third-party log spam (fairseq/speechbrain) and hide common deprecations.
+    logging.getLogger("fairseq").setLevel(logging.ERROR)
+    logging.getLogger("fairseq.tasks.text_to_speech").setLevel(logging.ERROR)
+    logging.getLogger("speechbrain").setLevel(logging.ERROR)
+    logging.getLogger("speechbrain.utils.train_logger").setLevel(logging.ERROR)
+
+    warnings.filterwarnings("ignore", category=FutureWarning)
+    warnings.filterwarnings("ignore", category=UserWarning)
 
 
 def _resample(audio: np.ndarray, sr_in: int, sr_out: int) -> np.ndarray:
@@ -76,7 +89,19 @@ def main() -> None:
     ap.add_argument("--sr", type=int, default=16000)
     ap.add_argument("--tse_checkpoint", type=Path, default=Path("all_checkpoints/TSE/libri2talker_libri2vox"))
     ap.add_argument("--ecapa_checkpoint", type=Path, default=Path("all_checkpoints/TSE/embedding_model.ckpt"))
+    ap.add_argument(
+        "--checkpoints_dir",
+        type=Path,
+        default=None,
+        help="Root directory containing checkpoints (e.g. /path/to/all_checkpoints). "
+        "Overrides SSL_CVA_CHECKPOINTS_DIR.",
+    )
     ap.add_argument("--anon_checkpoint_file", type=Path, default=None)
+    ap.add_argument(
+        "--quiet",
+        action="store_true",
+        help="Suppress common warnings and third-party logs (fairseq/speechbrain/torch).",
+    )
     ap.add_argument(
         "--write_residual",
         action="store_true",
@@ -87,15 +112,39 @@ def main() -> None:
         action="store_true",
         help="Also write tse_interference.wav for the processed window",
     )
+
     args = ap.parse_args()
+    quiet_enabled = args.quiet or os.environ.get("SSL_CVA_QUIET", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+    if quiet_enabled:
+        _configure_quiet()
 
     root = Path(__file__).resolve().parent
+    ckpt_root_raw = (
+        str(args.checkpoints_dir)
+        if args.checkpoints_dir is not None
+        else os.environ.get("SSL_CVA_CHECKPOINTS_DIR", "")
+    )
+    ckpt_root = (Path(ckpt_root_raw).expanduser().resolve() if ckpt_root_raw else (root / "all_checkpoints"))
+
+    def _resolve_ckpt(p: Path) -> Path:
+        if p.is_absolute():
+            return p
+        parts = p.parts
+        if parts and parts[0] == "all_checkpoints":
+            p = Path(*parts[1:])
+        return (ckpt_root / p).resolve()
+
     mix = args.mixture_wav if args.mixture_wav.is_absolute() else (root / args.mixture_wav).resolve()
     enr = args.enroll_wav if args.enroll_wav.is_absolute() else (root / args.enroll_wav).resolve()
     ref_dir = args.reference_dir if args.reference_dir.is_absolute() else (root / args.reference_dir).resolve()
     out_dir = args.out_dir if args.out_dir.is_absolute() else (root / args.out_dir).resolve()
-    tse_ckpt = args.tse_checkpoint if args.tse_checkpoint.is_absolute() else (root / args.tse_checkpoint).resolve()
-    ecapa_ckpt = args.ecapa_checkpoint if args.ecapa_checkpoint.is_absolute() else (root / args.ecapa_checkpoint).resolve()
+    tse_ckpt = _resolve_ckpt(args.tse_checkpoint)
+    ecapa_ckpt = _resolve_ckpt(args.ecapa_checkpoint)
 
     if not mix.is_file():
         raise SystemExit(f"Missing mixture wav: {mix}")
@@ -107,6 +156,7 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     mix_full = _load_mono(mix, args.sr)
+    _write(out_dir / "mixture_input.wav", mix_full, args.sr)
     n_full = len(mix_full)
     start = int(round(args.t_start_sec * args.sr))
     start = max(0, min(start, n_full))
@@ -134,8 +184,7 @@ def main() -> None:
         )
 
     sys.path.insert(0, str(root / "TSE"))
-    sys.path.insert(0, str(root / "TSE" / "later"))
-    from inference_server import TSEInference  # type: ignore
+    from tse_inference import TSEInference  # type: ignore
 
     tse = TSEInference(tse_model_path=str(tse_ckpt), ecapa_model_path=str(ecapa_ckpt))
 
@@ -182,48 +231,61 @@ def main() -> None:
     if args.write_tse_interference:
         _write(out_dir / "tse_interference.wav", tse_interference, args.sr)
 
-    anon_in_dir = out_dir / "anon_stage"
-    anon_in_dir.mkdir(parents=True, exist_ok=True)
-    anon_in_wav = anon_in_dir / "target_extracted.wav"
-    _write(anon_in_wav, target_extracted, args.sr)
-    input_list = anon_in_dir / "input.lst"
-    input_list.write_text(anon_in_wav.name + "\n", encoding="utf-8")
+    # Run anonymization in a temporary directory (keeps out_dir clean).
+    with tempfile.TemporaryDirectory(prefix="ssl_cva_anon_") as tmpdir:
+        tmpdir_p = Path(tmpdir)
+        anon_in_wav = tmpdir_p / "target_extracted.wav"
+        _write(anon_in_wav, target_extracted, args.sr)
 
-    mode_flag = "--ft" if args.target_age == "child" else "--base"
-    cmd = [
-        sys.executable,
-        str(root / "inference.py"),
-        mode_flag,
-        "--input_test_file",
-        str(input_list.relative_to(root)),
-        "--output_dir",
-        str((out_dir / "anon_out").relative_to(root)),
-        "--reference_dir",
-        str(ref_dir.relative_to(root)),
-        "--min_duration",
-        str(args.min_duration),
-        "--skip_existing",
-    ]
-    if args.anon_checkpoint_file is not None:
-        ck = args.anon_checkpoint_file if args.anon_checkpoint_file.is_absolute() else (root / args.anon_checkpoint_file)
-        cmd += ["--checkpoint_file", str(ck)]
+        input_list = tmpdir_p / "input.lst"
+        input_list.write_text(anon_in_wav.name + "\n", encoding="utf-8")
 
-    print("[anon]", " ".join(cmd), flush=True)
-    r = subprocess.run(cmd, cwd=str(root))
-    if r.returncode != 0:
-        raise SystemExit(r.returncode)
+        anon_out_dir = tmpdir_p / "anon_out"
+        anon_out_dir.mkdir(parents=True, exist_ok=True)
 
-    anon_target = out_dir / "anon_out" / "target_extracted.wav"
-    if not anon_target.is_file():
-        fl = out_dir / "anon_out" / "filtered_list.txt"
-        if fl.is_file():
-            lines = [x.strip() for x in fl.read_text(encoding="utf-8").splitlines() if x.strip()]
-            if lines:
-                anon_target = (out_dir / "anon_out" / lines[0]).resolve()
-    if not anon_target.is_file():
-        raise SystemExit("Could not find anonymized target output under anon_out/")
+        mode_flag = "--ft" if args.target_age == "child" else "--base"
+        cmd = [
+            sys.executable,
+            str(root / "inference.py"),
+            mode_flag,
+            "--input_test_file",
+            str(input_list),
+            "--output_dir",
+            str(anon_out_dir),
+            "--reference_dir",
+            str(ref_dir),
+            "--min_duration",
+            str(args.min_duration),
+            "--skip_existing",
+        ]
+        if args.anon_checkpoint_file is not None:
+            ck = (
+                args.anon_checkpoint_file
+                if args.anon_checkpoint_file.is_absolute()
+                else (root / args.anon_checkpoint_file)
+            )
+            cmd += ["--checkpoint_file", str(ck)]
 
-    anon_target_audio = _load_mono(anon_target, args.sr)[:Lsplice]
+        print("[anon]", " ".join(cmd), flush=True)
+        anon_env = os.environ.copy()
+        if quiet_enabled:
+            anon_env["SSL_CVA_QUIET"] = "1"
+            anon_env["PYTHONWARNINGS"] = "ignore"
+        r = subprocess.run(cmd, cwd=str(root), env=anon_env)
+        if r.returncode != 0:
+            raise SystemExit(r.returncode)
+
+        anon_target = anon_out_dir / "target_extracted.wav"
+        if not anon_target.is_file():
+            fl = anon_out_dir / "filtered_list.txt"
+            if fl.is_file():
+                lines = [x.strip() for x in fl.read_text(encoding="utf-8").splitlines() if x.strip()]
+                if lines:
+                    anon_target = (anon_out_dir / lines[0]).resolve()
+        if not anon_target.is_file():
+            raise SystemExit("Could not find anonymized target output under temporary anon_out/")
+
+        anon_target_audio = _load_mono(anon_target, args.sr)[:Lsplice]
 
     mix_out = np.asarray(mix_full, dtype=np.float32).copy()
     Lt = min(Lsplice, len(anon_target_audio), len(mix_used), len(target_extracted))
@@ -240,32 +302,7 @@ def main() -> None:
     _write(out_dir / "target_anonymized.wav", anon_target_audio, args.sr)
     _write(out_dir / "mixture_anonymized.wav", mix_out, args.sr)
 
-    manifest = {
-        "script": "inference_tse_v2.py",
-        "mixture_wav": str(mix),
-        "enroll_wav": str(enr),
-        "target_age": args.target_age,
-        "reference_dir": str(ref_dir),
-        "tse_checkpoint": str(tse_ckpt),
-        "ecapa_checkpoint": str(ecapa_ckpt),
-        "anon_mode": "ft" if args.target_age == "child" else "base",
-        "splice": {
-            "t_start_sec": args.t_start_sec,
-            "t_end_sec": end / args.sr,
-            "start_sample": start,
-            "end_sample": end,
-            "window_samples": Lsplice,
-            "applied_samples": Lt,
-            "recombine": args.recombine,
-            "replace_note": "replace mode drops non-target energy inside the window when speakers overlap",
-        },
-        "outputs": {
-            "target_extracted": "target_extracted.wav",
-            "target_anonymized": "target_anonymized.wav",
-            "mixture_anonymized": "mixture_anonymized.wav",
-        },
-    }
-    (out_dir / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n", encoding="utf-8")
+    
     print(
         f"Wrote: {out_dir / 'mixture_anonymized.wav'} "
         f"(full length {len(mix_out)} samples = {len(mix_out)/args.sr:.3f}s)",

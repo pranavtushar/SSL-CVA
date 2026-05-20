@@ -1,6 +1,0 @@
-../latest-child-speech-dataset/mps_test_filtered/audios/5b39c_EN-OL-RC-538_1.wav
-../latest-child-speech-dataset/mps_test_filtered/audios/5a38h_EN-OL-RC-538_2.wav
-../latest-child-speech-dataset/mps_test_filtered/audios/5a42c_EN-OL-RC-538_2.wav
-../latest-child-speech-dataset/mps_test_filtered/audios/5a25c_EN-OL-RC-538_2.wav
-../latest-child-speech-dataset/mps_test_filtered/audios/5a25j_EN-OL-RC-538_1.wav
-../latest-child-speech-dataset/mps_test_filtered/audios/5d39c_EN-OL-RC-538_1.wav
