@@ -9,4 +9,10 @@ miniconda/
 Miniconda3-*.sh
 env.sh
 
+<<<<<<< HEAD
 demo/output/
+=======
+demo/outpout/
+.DS_Store
+**/.DS_Store
+>>>>>>> 89269da (Remove .DS_Store from docs)
