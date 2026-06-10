@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supplementary — Child-Centric Voice Anonymization</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --border: #2d3a4d;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-soft: rgba(88, 166, 255, 0.15);
+      --green: #3fb950;
+      --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text);
+    }
+    .subtitle {
+      color: var(--muted);
+      font-size: 1rem;
+      margin-bottom: 2rem;
+    }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+    a:hover { text-decoration: underline; }
+    section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.5rem 2rem;
+      margin-bottom: 2rem;
+    }
+    section h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin: 0 0 1rem 0;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+    section h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin: 1.5rem 0 0.75rem 0;
+      color: var(--muted);
+    }
+    table {
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.6rem 0.75rem;
+      vertical-align: middle;
+    }
+    th {
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 600;
+      text-align: center;
+    }
+    /* Label column: fixed width like index.html (120px) */
+    th:first-child, td:first-child {
+      width: 120px;
+      min-width: 120px;
+      text-align: center;
+      font-weight: 500;
+      color: var(--muted);
+    }
+    /* Method columns: equal fixed width so all 4 audios align like index.html */
+    th:nth-child(2), td:nth-child(2),
+    th:nth-child(3), td:nth-child(3),
+    th:nth-child(4), td:nth-child(4),
+    th:nth-child(5), td:nth-child(5) {
+      width: 200px;
+      min-width: 200px;
+      text-align: center;
+    }
+    tr:hover td { background: rgba(255,255,255,0.03); }
+    audio {
+      width: 100%;
+      max-width: 200px;
+      height: 36px;
+      display: block;
+      margin: 0 auto;
+    }
+    .abstract {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+    .pairing-badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .pairing-AA { background: #238636; color: #fff; }
+    .pairing-CA { background: #8957e5; color: #fff; }
+    .pairing-CC { background: #bf8700; color: #fff; }
+    .overlap-cell { white-space: nowrap; color: var(--muted); }
+    nav.anchors {
+      margin-bottom: 2rem;
+    }
+    nav.anchors a {
+      display: inline-block;
+      margin-right: 1rem;
+      margin-bottom: 0.5rem;
+      padding: 0.35rem 0.75rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+    nav.anchors a:hover {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Child-Centric Voice Anonymization in Single and Multi-Speaker Speech via Domain-Adapted SSL Models</h1>
+  <p class="subtitle">Supplementary audio samples — INTERSPEECH 2025</p>
+
+  <div class="abstract">
+    <strong>Authors.</strong> Pranav Tushar<sup>1</sup>, Xiao Xiao Miao<sup>2</sup>, Rong Tong<sup>1</sup><br />
+    <strong>Affiliations.</strong> <sup>1</sup>Singapore Institute of Technology, Singapore; <sup>2</sup>Duke Kunshan University, China<br />
+    <strong>Contact.</strong> <a href="mailto:pranav.tushar@singaporetech.edu.sg">pranav.tushar@singaporetech.edu.sg</a>, <a href="mailto:xiaoxiao.miao@dukekunshan.edu.cn">xiaoxiao.miao@dukekunshan.edu.cn</a>, <a href="mailto:tong.rong@singaporetech.edu.sg">tong.rong@singaporetech.edu.sg</a>
+  </div>
+
+  <nav class="anchors">
+    <a href="#single">Single-speaker</a>
+    <a href="#twospeaker">Two-speaker (AA / CA / CC)</a>
+  </nav>
+
+  <div class="abstract">
+    <strong>Abstract.</strong> Voice anonymization aims to protect speaker identity while preserving linguistic content and speech usability. However, most anonymization systems are developed on adult speech, leading to degraded performance when applied to child speech. This paper investigates child-centric anonymization by adapting a self-supervised learning (SSL) based anonymization pipeline to the child speech domain. The system is adapted using child speech from the MyST corpus and evaluated under both single-speaker and two-speaker mixture conditions. Experimental results show that child-domain adaptation improves intelligibility and perceptual quality while maintaining strong privacy protection. Extending the approach to multi-speaker further demonstrates that combining target speaker extraction with child-adapted anonymization provides privacy protection while preserving conversational structure. These findings highlight the importance of child-specific adaptation for practical speech anonymization systems.
+     </div>
+
+  <!-- ========== SINGLE-SPEAKER ========== -->
+  <section id="single">
+    <h2>Single-speaker child anonymization</h2>
+    <p>Methods: <strong>Original</strong>, <strong>B2</strong> (McAdams baseline), <strong>SSL-Base</strong> (adult-trained), <strong>SSL-FT</strong> (child fine-tuned). Datasets: MyST (in-domain), SpeechOcean762, MPS (cross-accent).</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Sample</th>
+          <th>Original</th>
+          <th>B2</th>
+          <th>SSL-Base</th>
+          <th>SSL-FT</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>MyST (1)</td>
+          <td><audio src="final/1/myst/myst_002116_2014-02-27_09-29-01_LS_1.1_004/original.wav" controls preload="none"></audio></td>
+          <td><audio src="final/1/myst/myst_002116_2014-02-27_09-29-01_LS_1.1_004/B2.wav" controls preload="none"></audio></td>
+          <td><audio src="final/1/myst/myst_002116_2014-02-27_09-29-01_LS_1.1_004/ssl_base.wav" controls preload="none"></audio></td>
+          <td><audio src="final/1/myst/myst_002116_2014-02-27_09-29-01_LS_1.1_004/ssl_ft.wav" controls preload="none"></audio></td>
+        </tr>
+        <tr>
+          <td>MyST (2)</td>
+          <td><audio src="final/1/myst/f_myst_002119_2014-03-05_09-46-10_LS_1.3_003/original.wav" controls preload="none"></audio></td>
+          <td><audio src="final/1/myst/f_myst_002119_2014-03-05_09-46-10_LS_1.3_003/B2.wav" controls preload="none"></audio></td>
+          <td><audio src="final/1/myst/f_myst_002119_2014-03-05_09-46-10_LS_1.3_003/ssl_base.wav" controls preload="none"></audio></td>
+          <td><audio src="final/1/myst/f_myst_002119_2014-03-05_09-46-10_LS_1.3_003/ssl_ft.wav" controls preload="none"></audio></td>
+        </tr>
+        <tr>
+          <td>SpeechOcean (1)</td>
+          <td><audio src="final/1/speechocean/050390001/original.wav" controls preload="none"></audio></td>
+          <td><audio src="final/1/speechocean/050390001/B2.wav" controls preload="none"></audio></td>
+          <td><audio src="final/1/speechocean/050390001/ssl_base.wav" controls preload="none"></audio></td>
+          <td><audio src="final/1/speechocean/050390001/ssl_ft.wav" controls preload="none"></audio></td>
+        </tr>
+        <tr>
+          <td>SpeechOcean (2)</td>
+          <td><audio src="final/1/speechocean/060670003/original.wav" controls preload="none"></audio></td>
+          <td><audio src="final/1/speechocean/060670003/B2.wav" controls preload="none"></audio></td>
+          <td><audio src="final/1/speechocean/060670003/ssl_base.wav" controls preload="none"></audio></td>
+          <td><audio src="final/1/speechocean/060670003/ssl_ft.wav" controls preload="none"></audio></td>
+        </tr>
+        <tr>
+          <td>MPS (1)</td>
+          <td><audio src="final/1/mps/3a11h_EN-OL-RC-234_2/original.wav" controls preload="none"></audio></td>
+          <td><audio src="final/1/mps/3a11h_EN-OL-RC-234_2/B2.wav" controls preload="none"></audio></td>
+          <td><audio src="final/1/mps/3a11h_EN-OL-RC-234_2/ssl_base.wav" controls preload="none"></audio></td>
+          <td><audio src="final/1/mps/3a11h_EN-OL-RC-234_2/ssl_ft.wav" controls preload="none"></audio></td>
+        </tr>
+        <tr>
+          <td>MPS (2)</td>
+          <td><audio src="final/1/mps/4a31k_EN-OL-RC-426_2/original.wav" controls preload="none"></audio></td>
+          <td><audio src="final/1/mps/4a31k_EN-OL-RC-426_2/B2.wav" controls preload="none"></audio></td>
+          <td><audio src="final/1/mps/4a31k_EN-OL-RC-426_2/ssl_base.wav" controls preload="none"></audio></td>
+          <td><audio src="final/1/mps/4a31k_EN-OL-RC-426_2/ssl_ft.wav" controls preload="none"></audio></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ========== TWO-SPEAKER ========== -->
+  <section id="twospeaker">
+    <h2>Two-speaker mixtures (target anonymization)</h2>
+    <p>One example per overlap level. <strong>Mixture</strong> = original mix; <strong>Anonymized</strong> = target speaker anonymized, non-target unchanged. Pairings: <span class="pairing-badge pairing-AA">AA</span> Adult–Adult, <span class="pairing-badge pairing-CA">CA</span> Child–Adult, <span class="pairing-badge pairing-CC">CC</span> Child–Child.</p>
+
+    <h3><span class="pairing-badge pairing-AA">AA</span> Adult–Adult</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Overlap</th>
+          <th>Mixture</th>
+          <th>Anonymized</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="overlap-cell">0%</td>
+          <td><audio src="final/2/AA/0/000002_s1-libri_8230_s2-libri_2300_ov0_mix.wav" controls preload="none"></audio></td>
+          <td><audio src="final/2/AA/0/000002_s1-libri_8230_s2-libri_2300_ov0_anon.wav" controls preload="none"></audio></td>
+        </tr>
+        <tr>
+          <td class="overlap-cell">20%</td>
+          <td><audio src="final/2/AA/20/000000_s1-libri_1995_s2-libri_4077_ov20.mix.wav" controls preload="none"></audio></td>
+          <td><audio src="final/2/AA/20/000000_s1-libri_1995_s2-libri_4077_ov20.mix_anon.wav" controls preload="none"></audio></td>
+        </tr>
+        <tr>
+          <td class="overlap-cell">40%</td>
+          <td><audio src="final/2/AA/40/000000_s1-libri_5639_s2-libri_4970_ov40.mix.wav" controls preload="none"></audio></td>
+          <td><audio src="final/2/AA/40/000000_s1-libri_5639_s2-libri_4970_ov40.mix_anon.wav" controls preload="none"></audio></td>
+        </tr>
+        <tr>
+          <td class="overlap-cell">60%</td>
+          <td><audio src="final/2/AA/60/000001_s1-libri_7021_s2-libri_4970_ov60.mix.wav" controls preload="none"></audio></td>
+          <td><audio src="final/2/AA/60/000001_s1-libri_7021_s2-libri_4970_ov60.mix_anon.wav" controls preload="none"></audio></td>
+        </tr>
+        <tr>
+          <td class="overlap-cell">80%</td>
+          <td><audio src="final/2/AA/80/000000_s1-libri_908_s2-libri_7176_ov80.mix.wav" controls preload="none"></audio></td>
+          <td><audio src="final/2/AA/80/000000_s1-libri_908_s2-libri_7176_ov80.mix_anon.wav" controls preload="none"></audio></td>
+        </tr>
+        <tr>
+          <td class="overlap-cell">100%</td>
+          <td><audio src="final/2/AA/100/000000_s1-libri_8455_s2-libri_4446_ov100.mix.wav" controls preload="none"></audio></td>
+          <td><audio src="final/2/AA/100/000000_s1-libri_8455_s2-libri_4446_ov100.mix_anon.wav" controls preload="none"></audio></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3><span class="pairing-badge pairing-CA">CA</span> Child–Adult</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Overlap</th>
+          <th>Mixture</th>
+          <th>Anonymized</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="overlap-cell">0%</td>
+          <td><audio src="final/2/CA/0/000002_s1-myst_014028_s2-libri_1188_ov0_mix.wav" controls preload="none"></audio></td>
+          <td><audio src="final/2/CA/0/000002_s1-myst_014028_s2-libri_1188_ov0_anon.wav" controls preload="none"></audio></td>
+        </tr>
+        <tr>
+          <td class="overlap-cell">20%</td>
+          <td><audio src="final/2/CA/20/000001_s1-myst_990502_s2-libri_5105_ov20.mix.wav" controls preload="none"></audio></td>
+          <td><audio src="final/2/CA/20/000001_s1-myst_990502_s2-libri_5105_ov20.mix_anon.wav" controls preload="none"></audio></td>
+        </tr>
+        <tr>
+          <td class="overlap-cell">40%</td>
+          <td><audio src="final/2/CA/40/000001_s1-myst_007081_s2-libri_61_ov40.mix.wav" controls preload="none"></audio></td>
+          <td><audio src="final/2/CA/40/000001_s1-myst_007081_s2-libri_61_ov40.mix_anon.wav" controls preload="none"></audio></td>
+        </tr>
+        <tr>
+          <td class="overlap-cell">60%</td>
+          <td><audio src="final/2/CA/60/000002_s1-myst_997487_s2-libri_6930_ov60.mix.wav" controls preload="none"></audio></td>
+          <td><audio src="final/2/CA/60/000002_s1-myst_997487_s2-libri_6930_ov60.mix_anon.wav" controls preload="none"></audio></td>
+        </tr>
+        <tr>
+          <td class="overlap-cell">80%</td>
+          <td><audio src="final/2/CA/80/000000_s1-myst_014020_s2-libri_8230_ov80.mix.wav" controls preload="none"></audio></td>
+          <td><audio src="final/2/CA/80/000000_s1-myst_014020_s2-libri_8230_ov80.mix_anon.wav" controls preload="none"></audio></td>
+        </tr>
+        <tr>
+          <td class="overlap-cell">100%</td>
+          <td><audio src="final/2/CA/100/000001_s1-myst_996712_s2-libri_4507_ov100.mix.wav" controls preload="none"></audio></td>
+          <td><audio src="final/2/CA/100/000001_s1-myst_996712_s2-libri_4507_ov100.mix_anon.wav" controls preload="none"></audio></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3><span class="pairing-badge pairing-CC">CC</span> Child–Child</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Overlap</th>
+          <th>Mixture</th>
+          <th>Anonymized</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="overlap-cell">0%</td>
+          <td><audio src="final/2/CC/0/000013_s1-myst_005016_s2-myst_999459_ov0_mix.wav" controls preload="none"></audio></td>
+          <td><audio src="final/2/CC/0/000013_s1-myst_005016_s2-myst_999459_ov0_anon.wav" controls preload="none"></audio></td>
+        </tr>
+        <tr>
+          <td class="overlap-cell">20%</td>
+          <td><audio src="final/2/CC/20/000000_s1-myst_996433_s2-myst_997690_ov20.mix.wav" controls preload="none"></audio></td>
+          <td><audio src="final/2/CC/20/000000_s1-myst_996433_s2-myst_997690_ov20.mix_anon.wav" controls preload="none"></audio></td>
+        </tr>
+        <tr>
+          <td class="overlap-cell">40%</td>
+          <td><audio src="final/2/CC/40/000000_s1-myst_996725_s2-myst_996712_ov40.mix.wav" controls preload="none"></audio></td>
+          <td><audio src="final/2/CC/40/000000_s1-myst_996725_s2-myst_996712_ov40.mix_anon.wav" controls preload="none"></audio></td>
+        </tr>
+        <tr>
+          <td class="overlap-cell">60%</td>
+          <td><audio src="final/2/CC/60/000000_s1-myst_007081_s2-myst_014028_ov60.mix.wav" controls preload="none"></audio></td>
+          <td><audio src="final/2/CC/60/000000_s1-myst_007081_s2-myst_014028_ov60.mix_anon.wav" controls preload="none"></audio></td>
+        </tr>
+        <tr>
+          <td class="overlap-cell">80%</td>
+          <td><audio src="final/2/CC/80/000000_s1-myst_008005_s2-myst_007077_ov80.mix.wav" controls preload="none"></audio></td>
+          <td><audio src="final/2/CC/80/000000_s1-myst_008005_s2-myst_007077_ov80.mix_anon.wav" controls preload="none"></audio></td>
+        </tr>
+        <tr>
+          <td class="overlap-cell">100%</td>
+          <td><audio src="final/2/CC/100/000001_s1-myst_996716_s2-myst_013001_ov100.mix.wav" controls preload="none"></audio></td>
+          <td><audio src="final/2/CC/100/000001_s1-myst_996716_s2-myst_013001_ov100.mix_anon.wav" controls preload="none"></audio></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+</body>
+</html>
