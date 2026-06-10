@@ -15,4 +15,10 @@ demo/output/
 demo/outpout/
 .DS_Store
 **/.DS_Store
+<<<<<<< HEAD
 >>>>>>> 89269da (Remove .DS_Store from docs)
+=======
+
+.DS_Store
+**/.DS_Store
+>>>>>>> 3edd807 (Add GitHub Pages website for supplementary audio samples)
