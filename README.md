@@ -7,6 +7,9 @@ This repository contains code for **selective (reference/pool-based) voice anony
 
 This codebase is adapted from and inspired by the SSL-SAS family of systems.
 
+Audio samples can be found here: https://pranavtushar.github.io/SSL-CVA/ 
+
+
 ## Papers
 
 This repository follows the core ideas and components introduced in:
@@ -15,6 +18,10 @@ This repository follows the core ideas and components introduced in:
 2. [Analyzing Language-Independent Speaker Anonymization Framework under Unseen Conditions](https://arxiv.org/abs/2203.14834)
 
 Please cite these papers if you use this code.
+
+
+
+
 
 ## Dependencies
 
